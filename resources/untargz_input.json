@@ -1,4 +1,10 @@
 {
-  "UnTarGzWorkflow.gcp_storage_locations": ["gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/scripts/*.tar.gz"],
-  "UnTarGzWorkflow.output_location": "gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/out/"
+  "UnTarGzWorkflow.gcp_src_paths": [
+    "gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/scripts/*.tar.gz",
+    "gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/scripts2/*.tar.gz"
+  ],
+  "UnTarGzWorkflow.gcp_dst_paths": [
+    "gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/scripts/out",
+    "gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/scripts2/out"
+  ]
 }

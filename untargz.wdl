@@ -1,37 +1,33 @@
 version 1.0
 workflow UnTarGzWorkflow {
     input {
-        Array[String] gcp_storage_locations
-        String output_location
+        Array[String] gcp_src_paths
+        Array[String] gcp_dst_paths
     }
-    call UnTarGz { input: gcp_locations = gcp_storage_locations, output_location = output_location }
-
-    output {
-        String final_location = output_location
+    scatter (gcpPaths in zip(gcp_src_paths, gcp_dst_paths)) {
+        call UnTarGz { input: gcp_location = gcpPaths.left, output_location = gcpPaths.right }
     }
 }
 
 task UnTarGz {
     input {
-        Array[String] gcp_locations
+        String gcp_location
         String output_location
     }
     command {
         test -d /tmp || mkdir /tmp
-        for gcpLocation in ~{sep=' ' gcp_locations}; do
-            test -d /tmp/compressed || mkdir /tmp/compressed
-            test -d /tmp/decompressed || mkdir /tmp/decompressed
-            echo "Processing $gcp_location"
-            gsutil -m cp $gcp_location /tmp/compressed/
-            for filename in /tmp/compressed/*.tar.gz; do
-                echo "Decompress and unarchiving $filename"
-                tar -zxf $filename -C /tmp/decompressed/
-            done
-            gsutil -m cp -r /tmp/decompressed/* ~{output_location}
-            rm -rf /tmp/compressed
-            rm -rf /tmp/decompressed
+        test -d /tmp/compressed || mkdir /tmp/compressed
+        test -d /tmp/decompressed || mkdir /tmp/decompressed
+        gsutil -m cp ~{gcp_location} /tmp/compressed/
+        for filename in /tmp/compressed/*.tar.gz; do
+            echo "Decompress and unarchiving $filename"
+            tar -zxf $filename -C /tmp/decompressed/
         done
+        gsutil -m cp -r /tmp/decompressed/* ~{output_location}
+        rm -rf /tmp/compressed
+        rm -rf /tmp/decompressed
     }
+
     runtime {
         docker: "google/cloud-sdk:latest"
         preemptible : 2
