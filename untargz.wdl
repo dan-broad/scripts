@@ -4,52 +4,37 @@ workflow UnTarGzWorkflow {
         Array[String] gcp_storage_locations
         String output_location
     }
-    call CollectGCPLocations { input: gcp_storage_locations = gcp_storage_locations }
-    scatter( gcpLoc in CollectGCPLocations.collectedLocations ) {
-        call UnTarGz { input: gcp_location = gcpLoc, output_location = output_location }
-    }
+    call UnTarGz { input: gcp_locations = gcp_storage_locations, output_location = output_location }
+
     output {
         String final_location = output_location
     }
 }
 
-task CollectGCPLocations {
-    input {
-        Array[String] gcp_storage_locations
-    }
-    command {
-        for gcpLocation in ~{sep=' ' gcp_storage_locations}; do
-            gsutil ls $gcpLocation
-        done
-    }
-    output {
-        Array[String] collectedLocations = read_lines(stdout())
-    }
-    runtime {
-        docker: "ubuntu:latest"
-    }
-}
-
 task UnTarGz {
     input {
-        String gcp_location
+        Array[String] gcp_locations
         String output_location
     }
     command {
         test -d /tmp || mkdir /tmp
-        test -d /tmp/compressed || mkdir /tmp/compressed
-        test -d /tmp/decompressed || mkdir /tmp/decompressed
-        echo ~{gcp_location}
-        gsutil -m cp ~{gcp_location} /tmp/compressed/
-        for filename in /tmp/compressed/*.tar.gz; do
-            echo "Decompress and unarchiving $filename"
-            tar -zxf $filename -C /tmp/decompressed/
+        for gcpLocation in ~{sep=' ' gcp_locations}; do
+            test -d /tmp/compressed || mkdir /tmp/compressed
+            test -d /tmp/decompressed || mkdir /tmp/decompressed
+            echo "Processing $gcp_location"
+            gsutil -m cp $gcp_location /tmp/compressed/
+            for filename in /tmp/compressed/*.tar.gz; do
+                echo "Decompress and unarchiving $filename"
+                tar -zxf $filename -C /tmp/decompressed/
+            done
+            gsutil -m cp -r /tmp/decompressed/* ~{output_location}
+            rm -rf /tmp/compressed
+            rm -rf /tmp/decompressed
         done
-        gsutil -m cp -r /tmp/decompressed/* ~{output_location}
-        rm -rf /tmp/compressed
-        rm -rf /tmp/decompressed
     }
     runtime {
-        docker: "ubuntu:latest"
+        docker: "google/cloud-sdk:latest"
+        preemptible : 2
+        disk : "/tmp/ 100 HDD"
     }
 }
