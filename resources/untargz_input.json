@@ -1,0 +1,4 @@
+{
+  "UnTarGzWorkflow.gcp_storage_locations": ["gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/scripts/*.tar.gz"],
+  "UnTarGzWorkflow.output_location": "gs://fc-b8c36e66-a047-4fe1-a97b-20702645099a/gut_eqtl_rerun/out/"
+}
